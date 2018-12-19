@@ -3,10 +3,10 @@ package org.spbstu.chernonog.project;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
+
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
+
 
 import static org.junit.Assert.*;
 
@@ -149,5 +149,10 @@ public class SplayTreeSetTest {
 
     @Test
     public void clear() {
+        splayTreeSet.add(2);
+        splayTreeSet.add(6);
+        assertFalse(splayTreeSet.isEmpty());
+        splayTreeSet.clear();
+        assertTrue(splayTreeSet.isEmpty());
     }
 }
