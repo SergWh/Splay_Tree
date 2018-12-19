@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.SortedSet;
 
 
 import static org.junit.Assert.*;
@@ -26,14 +27,40 @@ public class SplayTreeSetTest {
 
     @Test
     public void subSet() {
+        splayTreeSet.add(1);
+        splayTreeSet.add(2);
+        splayTreeSet.add(5);
+        splayTreeSet.add(8);
+        splayTreeSet.add(9);
+        splayTreeSet.add(-1);
+        splayTreeSet.add(0);
+        SortedSet<Integer> subSet = splayTreeSet.subSet(0, 4);
+        assertEquals(0, subSet.first().intValue());
+        assertEquals(2, subSet.last().intValue());
+        subSet.remove(2);
+        assertFalse(subSet.contains(2));
+        assertFalse(splayTreeSet.contains(2));
     }
 
     @Test
-    public void headSet() {
-    }
-
-    @Test
-    public void tailSet() {
+    public void subSubSet(){
+        splayTreeSet.add(1);
+        splayTreeSet.add(2);
+        splayTreeSet.add(3);
+        splayTreeSet.add(4);
+        splayTreeSet.add(5);
+        splayTreeSet.add(8);
+        splayTreeSet.add(9);
+        splayTreeSet.add(-1);
+        splayTreeSet.add(0);
+        SortedSet<Integer> subSet = splayTreeSet.subSet(0, 4);
+        SortedSet<Integer> subSubSet = subSet.subSet(1,3);
+        assertEquals(1, subSubSet.first().intValue());
+        assertEquals(2, subSubSet.last().intValue());
+        subSubSet.remove(1);
+        assertFalse(splayTreeSet.contains(1));
+        assertFalse(subSet.contains(1));
+        assertFalse(subSubSet.contains(1));
     }
 
     @Test
@@ -124,28 +151,19 @@ public class SplayTreeSetTest {
 
     @Test
     public void add() {
+        try {
+            splayTreeSet.add(null);
+        } catch (NullPointerException e) {
+
+        }
 
     }
 
     @Test
     public void remove() {
+
     }
 
-    @Test
-    public void containsAll() {
-    }
-
-    @Test
-    public void addAll() {
-    }
-
-    @Test
-    public void retainAll() {
-    }
-
-    @Test
-    public void removeAll() {
-    }
 
     @Test
     public void clear() {

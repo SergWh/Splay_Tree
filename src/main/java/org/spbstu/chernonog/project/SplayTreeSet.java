@@ -518,21 +518,29 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         @NotNull
         @Override
         public SortedSet<E> subSet(E fromElement, E toElement) {
-
-            return m.subSet(fromElement, toElement);
+            if (!inRange(fromElement) || !inRange(toElement)) {
+                throw new IllegalArgumentException();
+            }
+            return new SubSet(m, fromElement, toElement);
         }
 
 
         @NotNull
         @Override
         public SortedSet<E> headSet(E toElement) {
-            return null;
+            if (toElement == null) {
+                throw new NullPointerException();
+            }
+            return new SubSet(m, first(), toElement);
         }
 
         @NotNull
         @Override
         public SortedSet<E> tailSet(E fromElement) {
-            return null;
+            if (fromElement == null) {
+                throw new NullPointerException();
+            }
+            return new SubSet(m, fromElement, last());
         }
 
         private Node<E> getFirstNode() {
