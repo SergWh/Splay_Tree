@@ -1,7 +1,5 @@
 package org.spbstu.chernonog.project;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -29,15 +27,16 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         setParent(node.right, node);
     }
 
+    //поворот ребенка и родителя
     private void rotate(Node<E> parent, Node<E> child) {
         Node<E> grandparent = parent.parent;
-        if (grandparent != null) {
+        if (grandparent != null) {   //обновление ссылок дедушки, если он имелся
             if (parent == grandparent.left) {
                 grandparent.left = child;
             } else {
                 grandparent.right = child;
             }
-        }
+        }// повороты
         if (parent.left == child) {
             parent.left = child.right;
             child.right = parent;
@@ -50,27 +49,28 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         saveParent(child);
     }
 
-
+    // механизм "вытягивания" вершины к корню
     private Node<E> splay(Node<E> entry) {
         if (entry.parent == null) {
             return entry;
         }
         Node<E> parent = entry.parent;
         Node<E> grandparent = parent.parent;
-        if (grandparent == null) {
+        if (grandparent == null) {  //если вершина - ребенок корня
             rotate(parent, entry);
             return entry;
         }
-        if ((grandparent.left == parent) == (grandparent.right == parent)) {
+        if ((grandparent.left == parent) == (parent.left == entry)) { //zig-zig случай
             rotate(grandparent, parent);
             rotate(parent, entry);
-        } else {
+        } else { //zig-zag случай
             rotate(parent, entry);
             rotate(grandparent, entry);
         }
         return splay(entry);
     }
 
+    // стандартный двоичный поиск
     private Node<E> find(Node<E> node, E element) {
         if (node == null) {
             return null;
@@ -89,43 +89,31 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         if (element == null) {
             throw new NullPointerException();
         }
-        Node<E> first;
-        Node<E> second;
-        Node<E> node;
-        boolean res = true;
         if (root == null) {
-            first = null;
-            second = null;
-        } else {
-            node = splay(find(root, element));
-            int cmp = compare(node.element, element);
-            if (cmp == 0) {
-                setParent(node.right, null);
-                setParent(node.left, null);
-                first = node.left;
-                second = node.right;
-                res = false;
-            } else if (cmp < 0) {
-                Node<E> right = node.right;
-                node.right = null;
-                setParent(right, null);
-                first = node;
-                second = right;
-            } else {
-                Node<E> left = node.left;
-                node.left = null;
-                setParent(left, null);
-                first = left;
-                second = node;
-            }
+            root = new Node<>(element, null, null, null);
+            size++;
+            return true;
         }
-        node = new Node<E>(element, null, first, second);
-        saveParent(node);
-        root = node;
-        if (res) size++;
-        return res;
+        Node<E> node = splay(find(root, element));// поиск и вытягивание ближайшего к найденному элемента
+        int cmp = compare(node.element, element);
+        if (cmp == 0) { // если элемент уже имеется в дереве
+            return false;
+        } else if (cmp < 0) { // если ближайший элемент меньше
+            Node<E> right = node.right;
+            node.right = null;
+            root = new Node<>(element, null, node, right);
+            saveParent(root);
+        } else { // если ближайший элемент больше
+            Node<E> left = node.left;
+            node.left = null;
+            root = new Node<>(element, null, left, node);
+            saveParent(root);
+        }
+        size++;
+        return true;
     }
 
+    //"слияние" двух деревьев в одно, при условии, что любой элемент правого больше любого элемента левого
     private Node<E> merge(Node<E> left, Node<E> right) {
         if (right == null) {
             return left;
@@ -133,48 +121,54 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         if (left == null) {
             return right;
         }
+        //если оба дерева не null, то в корень правого вытягивается ближайший к левому ключ
+        right.parent = null; //так как splay остановится только, если parent == null
         right = splay(find(right, left.element));
+        // корнем нового дерева становится вытянутая вершина
         right.left = left;
         left.parent = right;
         return right;
     }
 
-    private boolean delete(E element) {
-        boolean res;
-        Node<E> node;
-        node = splay(find(root, element));
+    // удаление для пользователя
+    private boolean splayDelete(E element) {
+        Node<E> node = splay(find(root, element));
         int cmp = compare(element, node.element);
         if (cmp != 0) {
             root = node;
-            res = false;
-        } else {
+            return false;
+        } else { // если элемент присутствует в дереве, вершина с ним удаляется, а корнем становится результат слияния детей
             setParent(node.left, null);
             setParent(node.right, null);
             root = merge(node.left, node.right);
-            res = true;
+            size--;
+            return true;
         }
-        if (res) size--;
-        return res;
     }
 
 
     private Node<E> getFirstNode() {
-        Node<E> p = root;
-        if (p != null)
-            while (p.left != null)
-                p = p.left;
-        return p;
+        Node<E> node = root;
+        if (node != null)
+            while (node.left != null)
+                node = node.left;
+        return node;
     }
 
     private Node<E> getLastNode() {
-        Node<E> p = root;
-        if (p != null)
-            while (p.right != null)
-                p = p.right;
-        return p;
+        Node<E> node = root;
+        if (node != null)
+            while (node.right != null)
+                node = node.right;
+        return node;
     }
 
+    // добавление элемента без перестройки дерева (для работы с коллекциями)
     private boolean nonSplayInsert(E element) {
+        if (root == null) {
+            root = new Node<E>(element, null, null, null);
+            return true;
+        }
         Node<E> closest = find(root, element);
         int cmp = compare(element, closest.element);
         if (cmp == 0) {
@@ -182,21 +176,20 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         }
         Node<E> node = new Node<>(element, closest, null, null);
         if (cmp < 0) {
-            assert closest.left == null;
             closest.left = node;
         } else {
-            assert closest.right == null;
             closest.right = node;
         }
         size++;
         return true;
     }
 
+    // удаление без полной перестройки дерева
     private void iteratorDelete(Node<E> node) {
-        Node<E> replacement = merge(node.left, node.right);
+        Node<E> replacement = merge(node.left, node.right); // замена удаленной вершины из слияния ее детей
         Node<E> parent = node.parent;
         setParent(replacement, parent);
-        if (parent != null) {
+        if (parent != null) { // обновление ссылок родителя, если он был
             if (parent.left == node) {
                 parent.left = replacement;
             }
@@ -209,41 +202,45 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         size--;
     }
 
-    static <E> Node<E> successor(Node<E> t) {
-        if (t == null)
+    // получение следующей по порядку следования элементов вершины
+    // используется в итераторе, а так же в subset
+    private Node<E> successor(Node<E> current) {
+        if (current == null)
             return null;
-        else if (t.right != null) {
-            Node<E> p = t.right;
-            while (p.left != null)
-                p = p.left;
-            return p;
+        else if (current.right != null) {
+            Node<E> next = current.right;
+            while (next.left != null)
+                next = next.left;
+            return next;
         } else {
-            Node<E> p = t.parent;
-            Node<E> ch = t;
-            while (p != null && ch == p.right) {
-                ch = p;
-                p = p.parent;
+            Node<E> parent = current.parent;
+            Node<E> child = current;
+            while (parent != null && child == parent.right) {
+                child = parent;
+                parent = parent.parent;
             }
-            return p;
+            return parent;
         }
     }
 
-    static <E> Node<E> predecessor(Node<E> t) {
-        if (t == null)
+    // получение предыдущей по порядку следования элементов вершины
+    // используется в subset
+    private Node<E> predecessor(Node<E> current) {
+        if (current == null)
             return null;
-        else if (t.left != null) {
-            Node<E> p = t.left;
-            while (p.right != null)
-                p = p.right;
-            return p;
+        else if (current.left != null) {
+            Node<E> prev = current.left;
+            while (prev.right != null)
+                prev = prev.right;
+            return prev;
         } else {
-            Node<E> p = t.parent;
-            Node<E> ch = t;
-            while (p != null && ch == p.left) {
-                ch = p;
-                p = p.parent;
+            Node<E> parent = current.parent;
+            Node<E> child = current;
+            while (parent != null && child == parent.left) {
+                child = parent;
+                parent = parent.parent;
             }
-            return p;
+            return parent;
         }
     }
 
@@ -262,35 +259,34 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         this.comparator = comparator;
     }
 
-    @Nullable
+
     @Override
     public Comparator<? super E> comparator() {
         return comparator;
     }
 
-    @NotNull
     @Override
     public SortedSet<E> subSet(E fromElement, E toElement) {
-        if (compare(fromElement, toElement) >= 0) {
+        if (compare(fromElement, toElement) > 0) {
             throw new IllegalArgumentException();
         }
         return new SubSet(this, fromElement, toElement);
     }
 
-    @NotNull
+
     @Override
     public SortedSet<E> headSet(E toElement) {
         if (toElement == null) {
-            throw new IllegalArgumentException();
+            throw new NullPointerException();
         }
         return new SubSet(this, null, toElement);
     }
 
-    @NotNull
+
     @Override
     public SortedSet<E> tailSet(E fromElement) {
         if (fromElement == null) {
-            throw new IllegalArgumentException();
+            throw new NullPointerException();
         }
         return new SubSet(this, fromElement, null);
     }
@@ -298,14 +294,18 @@ public class SplayTreeSet<E> extends AbstractSet<E>
     @Override
     public E first() {
         Node<E> node = getFirstNode();
-        if (node == null) throw new NoSuchElementException();
+        if (node == null) {
+            throw new NoSuchElementException();
+        }
         return node.element;
     }
 
     @Override
     public E last() {
         Node<E> node = getLastNode();
-        if (node == null) throw new NoSuchElementException();
+        if (node == null) {
+            throw new NoSuchElementException();
+        }
         return node.element;
     }
 
@@ -322,11 +322,16 @@ public class SplayTreeSet<E> extends AbstractSet<E>
     @Override
     public boolean contains(Object key) {
         E k = (E) key;
+        if (key == null){
+            throw new NullPointerException();
+        }
+        if (root == null) {
+            return false;
+        }
         root = splay(find(root, k));
         return compare(root.element, k) == 0;
     }
 
-    @NotNull
     @Override
     public Iterator<E> iterator() {
         return new ElementsIterator(getFirstNode());
@@ -340,14 +345,17 @@ public class SplayTreeSet<E> extends AbstractSet<E>
     @Override
     public boolean remove(Object o) {
         E element = (E) o;
-        return delete(element);
+        return splayDelete(element);
     }
 
+    // во всех All-операциях splay не выполняется ради эффективности
     @Override
-    public boolean containsAll(@NotNull Collection<?> c) {
+    public boolean containsAll(Collection<?> c) {
         for (Object element : c) {
             Node<E> node = find(root, (E) element);
-            if (compare(element, node.element) != 0) return false;
+            if (compare(element, node.element) != 0) {
+                return false;
+            }
         }
         return true;
     }
@@ -356,13 +364,14 @@ public class SplayTreeSet<E> extends AbstractSet<E>
     public boolean addAll(Collection<? extends E> c) {
         boolean modified = false;
         for (E e : c)
-            if (nonSplayInsert(e))
+            if (nonSplayInsert(e)) {
                 modified = true;
+            }
         return modified;
     }
 
     @Override
-    public boolean retainAll(@NotNull Collection<?> c) {
+    public boolean retainAll(Collection<?> c) {
         Objects.requireNonNull(c);
         boolean modified = false;
         for (Iterator<?> i = iterator(); i.hasNext(); ) {
@@ -375,7 +384,7 @@ public class SplayTreeSet<E> extends AbstractSet<E>
     }
 
     @Override
-    public boolean removeAll(@NotNull Collection<?> c) {
+    public boolean removeAll(Collection<?> c) {
         Objects.requireNonNull(c);
         boolean modified = false;
         for (Iterator<?> i = iterator(); i.hasNext(); ) {
@@ -393,6 +402,7 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         size = 0;
     }
 
+    // только для тестов splay операций
     public Node<E> getRoot() {
         return root;
     }
@@ -424,6 +434,9 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         }
     }
 
+
+    // итератор главного дерева
+    // в соответствие с контрактом SortedSet возвращает элементы в порядке их следования
     class ElementsIterator implements Iterator<E> {
         Node<E> next;
         Node<E> lastReturned;
@@ -433,6 +446,7 @@ public class SplayTreeSet<E> extends AbstractSet<E>
             next = first;
         }
 
+        @Override
         public boolean hasNext() {
             return next != null;
         }
@@ -447,6 +461,7 @@ public class SplayTreeSet<E> extends AbstractSet<E>
             return e;
         }
 
+        @Override
         public void remove() {
             if (lastReturned == null) {
                 throw new IllegalStateException();
@@ -461,107 +476,104 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         }
     }
 
+    // итератор любого subset
     class SubIterator extends ElementsIterator
             implements Iterator<E> {
 
         Node<E> limit;
-        SubSet subSet;
 
-        SubIterator(Node<E> first, Node<E> limit, SubSet subSet) {
+        SubIterator(Node<E> first, Node<E> last) {
             super(first);
-            this.limit = limit;
-            this.subSet = subSet;
+            this.limit = successor(last);
         }
 
         @Override
         public boolean hasNext() {
-            return (next != null && lastReturned != limit);
-        }
-
-        @Override
-        public void remove() {
-            super.remove();
-            subSet.size--;
+            return (next != null && next != limit);
         }
     }
-
 
     class SubSet extends AbstractSet<E>
             implements SortedSet<E> {
 
-        SplayTreeSet<E> m;
+        SplayTreeSet<E> motherSet; // set - родитель
+        // нижняя и верхня границы. если одна из границ null, subset не ограничен сверху или снизу соответственно
         E low;
         E high;
 
-        int size;
-
 
         private boolean inRange(E element) {
-            if (low != null && high != null) return (m.compare(element, low) >= 0 && m.compare(element, high) < 0);
-            if (low == null) return (m.compare(element, high) < 0);
-            return (m.compare(element, low) >= 0);
+            if (low != null && high != null) {
+                return (motherSet.compare(element, low) >= 0 && motherSet.compare(element, high) < 0);
+            }
+            if (low == null) {
+                return (motherSet.compare(element, high) < 0);
+            }
+            return (motherSet.compare(element, low) >= 0);
         }
 
-        SubSet(SplayTreeSet<E> m, E low, E high) {
-            this.m = m;
+        SubSet(SplayTreeSet<E> motherSet, E low, E high) {
+            this.motherSet = motherSet;
             this.low = low;
             this.high = high;
         }
 
 
-        @Nullable
         @Override
         public Comparator<? super E> comparator() {
-            return m.comparator();
+            return motherSet.comparator();
         }
 
-        @NotNull
         @Override
         public SortedSet<E> subSet(E fromElement, E toElement) {
             if (!inRange(fromElement) || !inRange(toElement)) {
                 throw new IllegalArgumentException();
             }
-            return new SubSet(m, fromElement, toElement);
+            return motherSet.subSet(fromElement, toElement);
         }
 
 
-        @NotNull
         @Override
         public SortedSet<E> headSet(E toElement) {
-            if (toElement == null) {
-                throw new NullPointerException();
+            if (!inRange(toElement)) {
+                throw new IllegalArgumentException();
             }
-            return new SubSet(m, first(), toElement);
+            return motherSet.subSet(this.low, toElement);
         }
 
-        @NotNull
         @Override
         public SortedSet<E> tailSet(E fromElement) {
-            if (fromElement == null) {
+            if (!inRange(fromElement)) {
                 throw new NullPointerException();
             }
-            return new SubSet(m, fromElement, last());
+            return motherSet.subSet(fromElement, this.high);
         }
 
         private Node<E> getFirstNode() {
-            if (low == null) return m.getFirstNode();
-            Node<E> node = m.find(m.root, low);
+            if (low == null) return motherSet.getFirstNode();
+            Node<E> node = motherSet.find(motherSet.root, low);
+            if (node == null) {
+                return node;
+            }
             while (!inRange(node.element)) {
-                node = successor(node);
+                node = motherSet.successor(node);
                 if (node == null) {
-                    throw new NoSuchElementException();
+                    break;
                 }
             }
             return node;
         }
 
         private Node<E> getLastNode() {
-            if (high == null) return m.getLastNode();
-            Node<E> node = m.find(m.root, high);
+            if (high == null) return motherSet.getLastNode();
+            Node<E> node = motherSet.find(motherSet.root, high);
+            if (node == null) {
+                return node;
+            }
             while (!inRange(node.element)) {
-                node = predecessor(node);
+                node = motherSet.predecessor(node);
                 if (node == null) {
-                    throw new NoSuchElementException();
+                    break;
                 }
             }
             return node;
@@ -569,22 +581,25 @@ public class SplayTreeSet<E> extends AbstractSet<E>
 
         @Override
         public E first() {
-            return getFirstNode().element;
+            Node<E> node = getFirstNode();
+            if (node == null) {
+                throw new NoSuchElementException();
+            }
+            return node.element;
         }
 
         @Override
         public E last() {
-            return getLastNode().element;
-        }
-
-        @Override
-        public int size() {
-            return this.size;
+            Node<E> node = getLastNode();
+            if (node == null) {
+                throw new NoSuchElementException();
+            }
+            return node.element;
         }
 
         @Override
         public boolean isEmpty() {
-            return this.size == 0;
+            return size() == 0;
         }
 
         @Override
@@ -593,13 +608,12 @@ public class SplayTreeSet<E> extends AbstractSet<E>
             if (!inRange(element)) {
                 return false;
             }
-            return m.contains(element);
+            return motherSet.contains(element);
         }
 
-        @NotNull
         @Override
         public Iterator<E> iterator() {
-            return new SubIterator(getFirstNode(), getLastNode(), this);
+            return new SubIterator(getFirstNode(), getLastNode());
         }
 
         @Override
@@ -607,11 +621,7 @@ public class SplayTreeSet<E> extends AbstractSet<E>
             if (!inRange(e)) {
                 throw new IllegalArgumentException();
             }
-            boolean res = m.add(e);
-            if (res) {
-                this.size++;
-            }
-            return res;
+            return motherSet.add(e);
         }
 
 
@@ -621,15 +631,11 @@ public class SplayTreeSet<E> extends AbstractSet<E>
             if (!inRange(element)) {
                 throw new IllegalArgumentException();
             }
-            boolean res = m.remove(element);
-            if (res) {
-                this.size--;
-            }
-            return res;
+            return motherSet.remove(element);
         }
 
         @Override
-        public boolean containsAll(@NotNull Collection<?> c) {
+        public boolean containsAll(Collection<?> c) {
             for (Object o : c) {
                 E element = (E) o;
                 if (!inRange(element)) {
@@ -649,7 +655,6 @@ public class SplayTreeSet<E> extends AbstractSet<E>
                     throw new IllegalArgumentException();
                 }
                 if (nonSplayInsert(e)) {
-                    this.size++;
                     modified = true;
                 }
             }
@@ -657,12 +662,15 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         }
 
         @Override
-        public boolean retainAll(@NotNull Collection<?> c) {
+        public boolean retainAll(Collection<?> c) {
             Objects.requireNonNull(c);
             boolean modified = false;
             for (Iterator<?> i = iterator(); i.hasNext(); ) {
                 E next = (E) i.next();
-                if (!c.contains(next) && inRange(next)) {
+                if (!inRange(next)) {
+                    throw new IllegalArgumentException();
+                }
+                if (!c.contains(next)) {
                     i.remove();
                     modified = true;
                 }
@@ -671,12 +679,15 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         }
 
         @Override
-        public boolean removeAll(@NotNull Collection<?> c) {
+        public boolean removeAll(Collection<?> c) {
             Objects.requireNonNull(c);
             boolean modified = false;
             for (Iterator<?> i = iterator(); i.hasNext(); ) {
                 E next = (E) i.next();
-                if (c.contains(next) && inRange(next)) {
+                if (!inRange(next)) {
+                    throw new IllegalArgumentException();
+                }
+                if (c.contains(next)) {
                     i.remove();
                     modified = true;
                 }
@@ -684,11 +695,22 @@ public class SplayTreeSet<E> extends AbstractSet<E>
             return modified;
         }
 
+        @Override
+        public int size() {
+            int res = 0;
+            for (Iterator i = iterator(); i.hasNext(); i.next()) {
+                res++;
+            }
+            return res;
+        }
+
+        // clear в subset удаляет все свои элементы, а так же все соответствующие элементы в родительском сете
         @Override
         public void clear() {
-            for (Iterator<?> i = iterator(); i.hasNext(); ) {
-                i.next();
-                i.remove();
+            Iterator<E> iterator = iterator();
+            while (iterator.hasNext()) {
+                iterator.next();
+                iterator.remove();
             }
         }
     }
