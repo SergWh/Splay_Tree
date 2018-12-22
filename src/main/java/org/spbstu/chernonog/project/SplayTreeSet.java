@@ -6,6 +6,8 @@ import java.util.*;
 public class SplayTreeSet<E> extends AbstractSet<E>
         implements SortedSet<E> {
 
+
+    //сравнение элементов
     private int compare(Object first, E second) {
         if (comparator == null) {
             Comparable<? super E> f = (Comparable<? super E>) first;
@@ -16,12 +18,14 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         }
     }
 
+    //установка родителя
     private void setParent(Node<E> child, Node<E> parent) {
         if (child != null) {
             child.parent = parent;
         }
     }
 
+    //передача ссылки на родителя детям данной вершины
     private void saveParent(Node<E> node) {
         setParent(node.left, node);
         setParent(node.right, node);
@@ -85,6 +89,7 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         return node;
     }
 
+    // вставка элемента, использующая splay
     private boolean splayInsert(E element) {
         if (element == null) {
             throw new NullPointerException();
@@ -146,7 +151,7 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         }
     }
 
-
+    //получение вершины с наименьшим элементом
     private Node<E> getFirstNode() {
         Node<E> node = root;
         if (node != null)
@@ -155,6 +160,7 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         return node;
     }
 
+    //получение вершины с наибольшим элементом
     private Node<E> getLastNode() {
         Node<E> node = root;
         if (node != null)
@@ -402,11 +408,7 @@ public class SplayTreeSet<E> extends AbstractSet<E>
         size = 0;
     }
 
-    // только для тестов splay операций
-    public Node<E> getRoot() {
-        return root;
-    }
-
+    //класс вершины
     static final class Node<E> {
         E element;
         Node<E> left;
@@ -418,10 +420,6 @@ public class SplayTreeSet<E> extends AbstractSet<E>
             this.parent = parent;
             this.left = left;
             this.right = right;
-        }
-
-        public E getElement() {
-            return element;
         }
 
         public int hashCode() {
@@ -451,7 +449,7 @@ public class SplayTreeSet<E> extends AbstractSet<E>
             return next != null;
         }
 
-        final Node<E> nextNode() {
+        private Node<E> nextNode() {
             Node<E> e = next;
             if (e == null) {
                 throw new NoSuchElementException();
@@ -497,11 +495,11 @@ public class SplayTreeSet<E> extends AbstractSet<E>
             implements SortedSet<E> {
 
         SplayTreeSet<E> motherSet; // set - родитель
-        // нижняя и верхня границы. если одна из границ null, subset не ограничен сверху или снизу соответственно
+        // нижняя и верхняя границы. если одна из границ null, subset не ограничен сверху или снизу соответственно
         E low;
         E high;
 
-
+        // проверка вхождения элемента в границы сета
         private boolean inRange(E element) {
             if (low != null && high != null) {
                 return (motherSet.compare(element, low) >= 0 && motherSet.compare(element, high) < 0);
@@ -549,13 +547,14 @@ public class SplayTreeSet<E> extends AbstractSet<E>
             return motherSet.subSet(fromElement, this.high);
         }
 
+        //получение вершины с наименьшим элементом
         private Node<E> getFirstNode() {
             if (low == null) return motherSet.getFirstNode();
-            Node<E> node = motherSet.find(motherSet.root, low);
+            Node<E> node = motherSet.find(motherSet.root, low);//поиск элемента, ближайшего к нижней границе
             if (node == null) {
                 return node;
             }
-            while (!inRange(node.element)) {
+            while (!inRange(node.element)) { //если найденный элемент не входит в границы
                 node = motherSet.successor(node);
                 if (node == null) {
                     break;
@@ -564,13 +563,14 @@ public class SplayTreeSet<E> extends AbstractSet<E>
             return node;
         }
 
+        //получение вершины с наимбольшим элементом
         private Node<E> getLastNode() {
             if (high == null) return motherSet.getLastNode();
-            Node<E> node = motherSet.find(motherSet.root, high);
+            Node<E> node = motherSet.find(motherSet.root, high);//поиск элемента, ближайщего к верхней границе
             if (node == null) {
                 return node;
             }
-            while (!inRange(node.element)) {
+            while (!inRange(node.element)) {//если найденный элемент не входит в границы
                 node = motherSet.predecessor(node);
                 if (node == null) {
                     break;
