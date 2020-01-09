@@ -1,2 +1,2 @@
 # Splay_Tree
-Project for university Data structures and algorithms course
+Project for university data structures and algorithms course
