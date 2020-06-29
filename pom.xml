@@ -11,10 +11,9 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.8</java.version>
-        <junit.jupiter.version>5.0.0</junit.jupiter.version>
-        <junit.jupiter.version>5.0.0</junit.jupiter.version>
-        <junit.platform.version>1.0.0</junit.platform.version>
+        <java.version>1.13</java.version>
+        <junit.jupiter.version>5.6.2</junit.jupiter.version>
+        <junit.platform.version>1.6.2</junit.platform.version>
     </properties>
 
     <dependencies>
@@ -24,7 +23,6 @@
             <version>${junit.jupiter.version}</version>
             <scope>test</scope>
         </dependency>
-
 
         <dependency>
             <groupId>org.junit.platform</groupId>
@@ -57,8 +55,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <source>8</source>
-                    <target>8</target>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
             </plugin>
             <plugin>
